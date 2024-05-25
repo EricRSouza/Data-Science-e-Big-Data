@@ -159,10 +159,64 @@
 #----------------------------------------------------------------------------------
 # Exercicio 5
 
-import time
-from multiprocessing import Process, current_process, Queue
+# import time
+# from multiprocessing import Process, current_process, Queue
 
-def pi_naive(start, end, step, queue):
+# def pi_naive(start, end, step, queue):
+#     # print ("Start: ", str(start))
+#     # print ("End: ", str(end))
+#     sum = 0.0
+
+#     for i in range(start, end):
+#         x = (i+0.5) * step
+#         sum = sum + 4.0/(1.0+x*x)
+
+#     queue.put(sum * step)
+
+# if __name__ == "__main__":
+#     num_steps = 10000000 #10.000.000 (10+e7)
+#     sums = 0.0
+#     step = 1.0/num_steps
+#     tic = time.time() # Tempo Inicial
+
+#     cpu = 4
+#     loop_range = num_steps//cpu
+#     workers = []
+
+#     var_pi = []
+#     # pi = 0.0
+
+#     queue = Queue()
+
+#     for i in range(cpu):
+#         p = Process(target=pi_naive, args=(i*(loop_range), (i+1)*(loop_range)-1, step, queue))
+#         workers.append(p)
+
+#     for i in range(cpu):
+#         workers[i].start()
+
+#     for i in range(cpu):
+#         workers[i].join()
+#     #     pi += queue.get()
+#     # print(pi)
+#         var_pi.append(queue.get())
+#     print(var_pi)
+#     print(sum(var_pi))
+
+
+#     toc = time.time() # Tempo Final 
+    # pi = step * sums
+    # print ("Valor Pi: %.10f" %pi)
+    # print ("Tempo Pi: %.8f s" %(toc-tic))
+
+
+#----------------------------------------------------------------------------------
+# Exercicio 6
+
+import time
+from multiprocessing import Process, Value
+
+def pi_naive(start, end, step, valor):
     # print ("Start: ", str(start))
     # print ("End: ", str(end))
     sum = 0.0
@@ -171,7 +225,8 @@ def pi_naive(start, end, step, queue):
         x = (i+0.5) * step
         sum = sum + 4.0/(1.0+x*x)
 
-    queue.put(sum * step)
+    with valor.get_lock():
+        valor.value += sum * step
 
 if __name__ == "__main__":
     num_steps = 10000000 #10.000.000 (10+e7)
@@ -183,13 +238,12 @@ if __name__ == "__main__":
     loop_range = num_steps//cpu
     workers = []
 
-    var_pi = []
-    # pi = 0.0
+    pi = 0.0
+    v = Value('d', 0, lock=True)
 
-    queue = Queue()
 
     for i in range(cpu):
-        p = Process(target=pi_naive, args=(i*(loop_range), (i+1)*(loop_range)-1, step, queue))
+        p = Process(target=pi_naive, args=(i*(loop_range), (i+1)*(loop_range)-1, step, v))
         workers.append(p)
 
     for i in range(cpu):
@@ -197,14 +251,13 @@ if __name__ == "__main__":
 
     for i in range(cpu):
         workers[i].join()
-    #     pi += queue.get()
-    # print(pi)
-        var_pi.append(queue.get())
-    print(var_pi)
-    print(sum(var_pi))
-
+    
+    pi += step * v.value
+    print(pi)
 
     toc = time.time() # Tempo Final 
     # pi = step * sums
     # print ("Valor Pi: %.10f" %pi)
     # print ("Tempo Pi: %.8f s" %(toc-tic))
+
+
